@@ -1,0 +1,47 @@
+.portfolio-kanban .no-type-text {
+    text-align: center
+}
+
+.portfolio-kanban .typeCombo {
+    float: right;
+}
+
+.portfolio-kanban .header {
+    border-bottom: 1px dotted #c6c6c6;
+    padding-top: 10px;
+    padding-right: 10px;
+}
+
+.portfolio-kanban .readyIndicator {
+    visibility: hidden;
+}
+
+.portfolio-kanban .timeInState {
+    border-top: 1px dotted #CCC;
+    border-top-width: 1px;
+    border-top-style: dotted;
+    border-top-color: #CCC;
+    color: #666;
+    margin-top: 5px;
+    padding-top: 5px;
+}
+
+.portfolio-kanban .showPolicies {
+    font-weight: bold;
+    float: right;
+    margin: 1px 10px 0 0;
+
+    width: auto !important;
+    border-right: 1px dotted #CCC;
+    padding-right: 13px;
+    height: 21px;
+}
+
+.portfolio-kanban .showPolicies  label {
+    position: relative;
+    top: 1px;
+}
+
+.portfolio-kanban .headerSpacer {
+
+}
