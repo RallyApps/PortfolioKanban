@@ -1,17 +1,4 @@
-## Overview
 
-This Rakefile can be used to create a skeleton Rally app for use with Rally's App SDK.  You must have Ruby and the rake gem installed.
+The Portfolio Kanban Board app helps you track the status of your portfolio items as they move along in your portfolio process. You must have Rally Portfolio Manager enabled in your subscription to add the app to your Rally menus.
 
-Available tasks are:
-
-    rake build                      # Build a deployable app which includes all JavaScript and CSS resources inline
-    rake clean                      # Clean all generated output
-    rake debug                      # Build a debug version of the app, useful for local development
-    rake jslint                     # Run jslint on all JavaScript files used by this app
-    rake new[app_name,sdk_version]  # Create an app with the provided name (and optional SDK version)
-    
-You can find more information on installing Ruby and using rake tasks to simplify app development here: https://rally1.rallydev.com/apps/2.0p/doc/#!/guide/appsdk_20_starter_kit
-
-## License
-
-AppTemplate is released under the MIT license.  See the file LICENSE for the full text.
+Each portfolio item is displayed as its own card on the Kanban board. Each card displays the ID, Name, Owner, and % Done by Story Count. If a portfolio item has not been assigned a state, it displays in the No Entry column.
