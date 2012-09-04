@@ -1,0 +1,17 @@
+/** these styles should live in rui, but are currently in alm and have to be copied here. **/
+
+.app-settings .settings-title {
+    height: 20px;
+    padding: 5px;
+    font-weight: bold;
+    font-size: 12px;
+    color: black;
+}
+
+.app-settings .settings-form {
+    margin: 15px 0 0 20px;
+}
+
+.app-settings .settings-form label {
+    font-size: 12px;
+}

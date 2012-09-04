@@ -5,12 +5,25 @@
      * PI Kanban Board App
      * Displays a cardboard and a type selector. Board shows States for the selected Type.
      */
-    Ext.define('Rally.app.portfolioitem.PortfolioKanbanApp', {
+    Ext.define('Rally.app.portfoliokanban.PortfolioKanbanApp', {
         extend:'Rally.app.App',
         layout:'auto',
         appName:'Portfolio Kanban',
 
         cls:'portfolio-kanban',
+
+        config: {
+            defaultSettings: {
+                fields: 'PercentDoneByStoryCount'
+            }
+        },
+
+        clientMetrics: [
+            {
+                method: '_showHelp',
+                defaultUserAction: 'portfolio-kanban-show-help'
+            }
+        ],
 
         items:[
             {
@@ -29,38 +42,110 @@
          * @override
          */
         launch:function () {
-            this.typeCombo = Ext.widget('rallycombobox', {
-                fieldLabel:'Type',
-                labelWidth:30,
-                labelClsExtra:'rui-label',
-                stateful:false,
-                storeConfig:{
-                    autoLoad:true,
-                    remoteFilter:false,
-                    model:'Type',
-                    sorters:{
-                        property:'ordinalValue',
-                        direction:'Desc'
+            
+            this.appContext = this.getContext().getDataContext();
+            this._queryForType(this.getSetting('type'));
+        },
+
+        setType: function(type) {
+            if(!type){
+                this._queryForType();
+                return;
+            }
+
+            this.currentType = type;
+
+            this._drawHeader();
+            this._loadCardboard();
+        },
+        
+        _drawHeader: function(){
+            var header = this.down('#header');
+
+            var settingsLink = this._buildSettingsLink();
+
+            header.add([
+                this._buildHelpComponent(),
+                this._buildShowPolicies(),
+                this._buildFilterInfo(),
+                this._buildSettingsLink()
+            ]);
+        },
+
+        _buildSettingsLink: function(){
+            return Ext.widget('component', {
+                cls: 'appSettingsLink',
+                renderTpl: '<a href="#">Settings</a>',
+                renderSelectors: {
+                    link: 'a'
+                },
+                listeners: {
+                    click: {
+                        element: 'link',
+                        fn: function(){
+                            Ext.widget('rallyappsettingsdialog', {
+                                context: this.getContext(),
+                                fields: [
+                                    {
+                                        type: 'type'
+                                    }
+                                ],
+                                settings: this.getSettings(),
+                                listeners: {
+                                    save: function(settings){
+                                        this.setSettings(settings);
+                                        this._reloadApp();
+                                    },
+                                    scope: this
+                                }
+                            }).show();
+                        },
+                        stopEvent: true
                     },
-                    cls:'typeCombo',
-                    defaultSelectionToFirst:false,
-                    context:this.getContext().getDataContext()
+                    scope: this
+                }
+            })
+        },
+
+        _reloadApp: function(){
+            this.down('#bodyContainer').removeAll();
+            this.down('#header').removeAll();
+            this.launch();
+        },
+
+        _queryForType: function(typeRef) {
+            var filters = [];
+            if (typeRef) {
+                filters.push({
+                    property:'ObjectID',
+                    value:Rally.util.Ref.getOidFromRef(typeRef)
+                });
+            } else {
+                filters.push({
+                    property:'Ordinal',
+                    value:'0'
+                });
+            }
+
+            this.typeStore = Ext.create('Rally.data.WsapiDataStore', {
+                model: 'TypeDefinition',
+                autoLoad: true,
+                context: this.getContext().getDataContext(),
+                filters: filters,
+                listeners:{
+                    load: function(data) {
+                        var type = data.getAt(0);
+                        this.setType(type);
+                    },
+                    scope:this
                 }
             });
-
-            this.typeCombo.addCls(Rally.util.Test.toBrowserTestCssClass('pi-type-combobox'));
-            this.typeCombo.on('select', this._loadCardboard, this);
-            this.typeCombo.store.on('load', this._loadCardboard, this);
-            this.down('#header').add(this.typeCombo);
-
-            this._addShowPoliciesCheckbox();
         },
 
         _loadCardboard:function () {
             this._loadStates({
                 success:function (states) {
-                    var columns = this._createColumns(states);
-                    this._drawCardboard(columns);
+                    this._drawCardboard(this._createColumns(states));
                 },
                 scope:this
             });
@@ -76,8 +161,6 @@
          * @param options.scope the scope to call success with
          */
         _loadStates:function (options) {
-            this.currentType = this.typeCombo.getValue();
-
             Ext.create('Rally.data.WsapiDataStore', {
                 model:'State',
                 context:this.getContext().getDataContext(),
@@ -85,8 +168,8 @@
                 fetch:['Name', 'WIPLimit', 'Description'],
                 filters:[
                     {
-                        property:'StateType',
-                        value:this.currentType
+                        property: 'TypeDef',
+                        value:this.currentType.get('_ref')
                     },
                     {
                         property:'Enabled',
@@ -115,48 +198,73 @@
          * @param columns
          */
         _drawCardboard:function (columns) {
-            if (columns) {
-                var cardboard = this.down('#cardboard');
-                if (cardboard) {
-                    cardboard.destroy();
-                }
-
-                cardboard = Ext.widget('rallycardboard', {
-                    types:['PortfolioItem'],
-                    itemId:'cardboard',
-                    attribute:'State',
-                    columns:columns,
-                    maxColumnsPerBoard:columns.length,
-                    ddGroup:this.typeCombo.getValue(),
-                    enableRanking:this.getContext().get('workspace').WorkspaceConfiguration.DragDropRankingEnabled,
-                    columnConfig:{
-                        xtype:'rallykanbancolumn'
-                    },
-                    cardConfig:{
-                        xtype:'rallyportfoliokanbancard'
-                    },
-                    storeConfig:{
-                        filters:[
-                            {
-                                property:'PortfolioItemType',
-                                value:this.currentType
-                            }
-                        ]
-                    },
-
-                    loadDescription:'Portfolio Kanban'
-                });
-
-                this.down('#bodyContainer').add(cardboard);
-
-                this._attachPercentDoneToolTip(cardboard);
-
-                this._renderPolicies();
-                Ext.EventManager.onWindowResize(cardboard.resizeAllColumns, cardboard);
-            } else {
+            if(columns) {
+                this._showColumns(columns);
+            }
+            else {
                 this._showNoColumns();
             }
+        },
 
+        _showColumns: function(columns) {
+            var cardboard = this.down('#cardboard');
+            if (cardboard) {
+                cardboard.destroy();
+            }
+
+            var columnConfig = {
+                xtype:'rallykanbancolumn'
+            };
+
+            var cardConfig = {
+                xtype:'rallyportfoliokanbancard'
+            };
+
+            var fields = this.getSetting('fields');
+
+            if(fields) {
+                columnConfig.additionalFetchFields = fields.split(',');
+                cardConfig.fields = fields.split(',').sort();
+            }
+
+            cardboard = this.cardboard = Ext.widget('rallycardboard', {
+                types: [this.currentType.get('TypePath')],
+                itemId: 'cardboard',
+                attribute: 'State',
+                columns: columns,
+                maxColumnsPerBoard: columns.length,
+                ddGroup: this.currentType.get('TypePath'),
+                enableRanking: this.getContext().get('workspace').WorkspaceConfiguration.DragDropRankingEnabled,
+                columnConfig: columnConfig,
+                cardConfig: cardConfig,
+                storeConfig:{
+                    filters:[
+                        {
+                            property:'PortfolioItemType',
+                            value:this.currentType.get('_ref')
+                        }
+                    ],
+                    context: this.context.getDataContext()
+                },
+                listeners:{
+                    aftercarddroppedsave:function () {
+                        Rally.alm && Rally.environment.getMessageBus().publish(Rally.alm.Message.contentUpdated);
+                    },
+                    load:function () {
+                        Rally.alm && Rally.environment.getMessageBus().publish(Rally.alm.Message.contentUpdated);
+                    },
+                    scope:this
+                },
+
+                loadDescription:'Portfolio Kanban'
+            });
+
+            this.down('#bodyContainer').add(cardboard);
+
+            this._attachPercentDoneToolTip(cardboard);
+
+            this._renderPolicies();
+            Ext.EventManager.onWindowResize(cardboard.resizeAllColumns, cardboard);
         },
 
         _showNoColumns:function () {
@@ -172,27 +280,30 @@
          * @return columns for the cardboard, as a map with keys being the column name.
          */
         _createColumns:function (states) {
-            var columns;
+            if(!states.length) {
+                return undefined;
+            }
 
-            if (states.length) {
-
-                columns = [
+            var columns = [
                     {
                         displayValue:'No Entry',
                         value:null,
-                        cardLimit:50
+                        cardLimit:50,
+                        showPolicies:false,
+                        enablePolicies:true
                     }
                 ];
 
-                Ext.Array.each(states, function (state) {
-                    columns.push({
-                        value:state.get('_ref'),
-                        displayValue:state.get('Name'),
-                        wipLimit:state.get('WIPLimit'),
-                        policies:state.get('Description')
-                    });
+            Ext.Array.each(states, function (state) {
+                columns.push({
+                    value:state.get('_ref'),
+                    displayValue:state.get('Name'),
+                    wipLimit:state.get('WIPLimit'),
+                    stateRecord:state,
+                    showPolicies:false,
+                    enablePolicies:true
                 });
-            }
+            });
 
             return columns;
         },
@@ -201,10 +312,11 @@
             Ext.create('Rally.ui.tooltip.PercentDoneToolTip', {
                 target:cardboard.getEl(),
                 delegate:'.percentDoneContainer',
+                percentDoneName: 'PercentDoneByStoryCount',
                 listeners:{
                     beforeshow:function (tip) {
 
-                        var cardElement = Ext.get(tip.triggerElement).up('.cardContainer');
+                        var cardElement = Ext.get(tip.triggerElement).up('.rui-card');
                         var card = Ext.getCmp(cardElement.id);
 
                         tip.updateContent(card.getRecord().data);
@@ -215,42 +327,125 @@
         },
 
         _renderPolicies:function () {
-            if (this._isToggledOn('PORTFOLIO_ITEM_KANBAN_POLICIES')) {
-                var showPoliciesCheckbox = this.down("#showPoliciesCheckbox");
+            var showPoliciesCheckbox = this.down("#showPoliciesCheckbox");
 
-                Ext.each(this.query('#policies'), function (policy) {
-                        var lintMakesMeDoThis = showPoliciesCheckbox.getValue() ? policy.show() : policy.hide();
-                    }
-                );
-            }
+            Ext.each(this.cardboard.getColumns(), function (column) {
+                column.togglePolicy(showPoliciesCheckbox.getValue());
+            });
+
+            this.cardboard.resizeAllColumns();
         },
 
-        _addShowPoliciesCheckbox:function () {
-            if (this._isToggledOn('PORTFOLIO_ITEM_KANBAN_POLICIES')) {
-
-                this.showPolicies = Ext.widget('checkbox', {
-                    cls:'showPolicies',
-                    itemId:'showPoliciesCheckbox',
-                    fieldCls:'showPoliciesCheckbox',
-                    boxLabel:"Show Policies",
-                    listeners:{
-                        change:{
-                            fn:this._renderPolicies,
-                            scope:this
-                        }
+        _buildShowPolicies:function () {
+            return Ext.widget('checkbox', {
+                cls:'showPolicies',
+                itemId:'showPoliciesCheckbox',
+                fieldCls:'showPoliciesCheckbox',
+                boxLabel:"Show Policies",
+                listeners:{
+                    change:{
+                        fn:this._renderPolicies,
+                        scope:this
                     }
-                });
+                }
+            });
 
-                this.down('#header').add(this.showPolicies);
-            }
         },
 
-        _isToggledOn:function(toggleName){
-            if(!Rally.alm){
-                return true;
+        _buildHelpComponent:function (config) {
+            return Ext.create('Ext.Component', Ext.apply({
+                cls:Rally.util.Test.toBrowserTestCssClass('portfolio-kanban-help-container') + ' kanban-help ',
+                renderTpl:'<a href="#" title="Launch Help"></a>',
+                listeners:{
+                    click:{
+                        element:'el',
+                        fn: function(){
+                            Rally.alm.util.Help.launchHelp({
+                                id:265
+                            });
+                        },
+                        stopEvent:true
+                    },
+                    scope:this
+                }
+            }, config));
+        },
+
+        _buildFilterInfo: function(){
+            var filterInfo = Ext.widget('component', {
+                itemId: 'filterInfo',
+                cls: 'filterInfo',
+                renderTpl: '<a></a>',
+                renderSelectors: {
+                    link: 'a'
+                }
+            });
+
+            filterInfo.on('afterrender', function(){
+                this._initFilterInfoTooltip();
+            }, this);
+
+            return filterInfo;
+        },
+
+        _initFilterInfoTooltip: function(){
+            var me = this;
+            this.filterInfoTooltip = Ext.create('Rally.ui.tooltip.ToolTip', {
+                cls: 'filterInfoTooltip',
+                width: 200,
+                target: this.down('#filterInfo').getEl().down('a'),
+                anchor: 'top',
+                anchorOffset: 150,
+                getTargetXY: function(){
+                    var filterPosition = me.down('#filterInfo').getEl().getXY();
+                    return [filterPosition[0]-160, filterPosition[1]+26];
+                },
+                listeners: {
+                    beforeShow: function(tip){
+                        tip.update(me._getFilterTooltipContent());
+                    }
+                }
+            });
+        },
+
+        _getFilterTooltipContent: function(){
+            var tplData = {};
+
+            if(this.getSetting('project')){
+                tplData.project = this.getContext().get('project').Name;
             }
-            return Rally.alm.FeatureToggle.isEnabled(toggleName);
+            if(this.currentType){
+                tplData.type = this.currentType.get('Name');
+            }
+
+            var scopeUp = this.getSetting('projectScopeUp') == 'true';
+            var scopeDown = this.getSetting('projectScopeDown') == 'true';
+
+            if(scopeUp && scopeDown){
+                tplData.scopingCls = 'scopeUpAndDown';
+            } else if(scopeUp){
+                tplData.scopingCls = 'scopeUp';
+            } else if(scopeDown){
+                tplData.scopingCls = 'scopeDown';
+            } else {
+                tplData.scopingCls = 'noScope';
+            }
+
+            return Ext.create('Ext.XTemplate',
+                    '<tpl if="project">',
+                        '<div class="filterInfoTooltipLineItem">',
+                            '<label>Project:</label>',
+                            '<span>{project}</span>',
+                            '<span class="{scopingCls}"></span>',
+                        '</div>',
+                    '</tpl>',
+                    '<tpl if="type">',
+                        '<div class="filterInfoTooltipLineItem">',
+                            '<label>Type:</label> ',
+                            '<span>{type}</span>',
+                        '</div>',
+                    '</tpl>'
+            ).apply(tplData);
         }
-
     });
-}());
+})();

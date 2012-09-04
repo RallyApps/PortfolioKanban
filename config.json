@@ -1,12 +1,14 @@
 {
     "name":"Portfolio Kanban Board",
-    "className":"Rally.app.portfolioitem.PortfolioKanbanApp",
-    "sdk":"2.0p",
+    "className":"Rally.app.portfoliokanban.PortfolioKanbanApp",
+    "sdk":"2.0p3",
     "javascript":[
+        "AppSettingsDialog.js",
         "PortfolioKanbanCard.js",
         "PortfolioKanbanApp.js"
     ],
     "css":[
-        "PortfolioKanbanApp.css"
+        "PortfolioKanbanApp.css",
+        "AppSettings.css"
     ]
 }

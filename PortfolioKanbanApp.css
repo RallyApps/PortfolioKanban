@@ -8,7 +8,6 @@
 
 .portfolio-kanban .header {
     border-bottom: 1px dotted #c6c6c6;
-    padding-top: 10px;
     padding-right: 10px;
 }
 
@@ -29,12 +28,7 @@
 .portfolio-kanban .showPolicies {
     font-weight: bold;
     float: right;
-    margin: 1px 10px 0 0;
-
-    width: auto !important;
-    border-right: 1px dotted #CCC;
-    padding-right: 13px;
-    height: 21px;
+    margin: 3px 10px 6px 0;
 }
 
 .portfolio-kanban .showPolicies  label {
@@ -42,6 +36,77 @@
     top: 1px;
 }
 
-.portfolio-kanban .headerSpacer {
+.portfolio-kanban .settingsHeader {
+    float: left;
+    color: gray;
+    padding: 1px 0 0 10px;
+}
 
+.portfolio-kanban .settingsHeader b {
+    padding-right: 5px;
+}
+
+.portfolio-kanban .filterInfo {
+    float: right;
+    padding-right: 1px;
+    border-right: 1px solid #CCC;
+    margin-right: 5px;
+    margin-top: 3px;
+}
+
+.portfolio-kanban .filterInfo a {
+    display: block;
+    width: 21px;
+    height: 21px;
+    background: transparent url(https://rally1.rallydev.com/apps/2.0p3/rui/resources/themes/images/default/form/filter-blue-on-white.png) no-repeat scroll 0 0;
+}
+
+.filterInfoTooltipLineItem {
+    padding-top: 5px;
+}
+
+.filterInfoTooltip .scopeUp, .filterInfoTooltip .scopeDown, .filterInfoTooltip .scopeUpAndDown, .filterInfoTooltip .noScope {
+    display: inline-block;
+    width: 5px;
+    height: 11px;
+    margin-left: 4px;
+    position: relative;
+    top: 1px;
+}
+
+.filterInfoTooltip .scopeUp {
+    background: transparent url(https://rally1.rallydev.com/apps/2.0p3/rui/resources/themes/images/default/projectpicker/scope-up-ffffff.png) no-repeat scroll 0 0;
+}
+
+.filterInfoTooltip .scopeDown {
+    background: transparent url(https://rally1.rallydev.com/apps/2.0p3/rui/resources/themes/images/default/projectpicker/scope-down-ffffff.png) no-repeat scroll 0 0;
+}
+
+.filterInfoTooltip .scopeUpAndDown {
+    background: transparent url(https://rally1.rallydev.com/apps/2.0p3/rui/resources/themes/images/default/projectpicker/scope-both-ffffff.png) no-repeat scroll 0 0;
+}
+
+.filterInfoTooltip h3 {
+    font-size: 14px;
+    font-weight: normal !important;
+}
+
+.filterInfoTooltip label {
+    font-weight: bold;
+}
+
+.filterInfoTooltip span {
+    margin-left: 3px;
+}
+
+.appSettingsLink {
+    padding: 4px 4px 0 0;
+    margin: 3px 1px 0 0;
+    border-right: 1px solid #CCC;
+    height: 21px;
+    float: right;
+}
+
+.app-settings .settings-title {
+    display: none;
 }
