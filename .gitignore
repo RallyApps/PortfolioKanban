@@ -4,3 +4,5 @@ deploy.json
 App-debug.html
 # Ignore 'local' build version of App
 App-local.html
+
+.idea

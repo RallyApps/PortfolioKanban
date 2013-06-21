@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'net/http'
 require 'uri'
-require 'json'
+
 
 ENABLE_JSLINT = ENV['ENABLE_JSLINT'] == 'true'
 

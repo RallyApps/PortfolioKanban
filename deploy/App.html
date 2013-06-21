@@ -130,6 +130,7 @@
             })();            (function () {
                 var Ext = window.Ext4 || window.Ext;
             
+                var columnsToShow = ['No Entry', 'Prep', 'Ready for Dev', 'In Dev', 'Rally Rollout', 'Archived'];
                 /**
                  * PI Kanban Board App
                  * Displays a cardboard and a type selector. Board shows States for the selected Type.
@@ -141,16 +142,16 @@
             
                     cls:'portfolio-kanban',
             
-                    config: {
-                        defaultSettings: {
-                            fields: 'PercentDoneByStoryCount'
+                    config:{
+                        defaultSettings:{
+                            fields:'PercentDoneByStoryCount'
                         }
                     },
             
-                    clientMetrics: [
+                    clientMetrics:[
                         {
-                            method: '_showHelp',
-                            defaultUserAction: 'portfolio-kanban-show-help'
+                            method:'_showHelp',
+                            defaultUserAction:'portfolio-kanban-show-help'
                         }
                     ],
             
@@ -171,13 +172,13 @@
                      * @override
                      */
                     launch:function () {
-                        
+            
                         this.appContext = this.getContext().getDataContext();
                         this._queryForType(this.getSetting('type'));
                     },
             
-                    setType: function(type) {
-                        if(!type){
+                    setType:function (type) {
+                        if (!type) {
                             this._queryForType();
                             return;
                         }
@@ -187,8 +188,8 @@
                         this._drawHeader();
                         this._loadCardboard();
                     },
-                    
-                    _drawHeader: function(){
+            
+                    _drawHeader:function () {
                         var header = this.down('#header');
             
                         var settingsLink = this._buildSettingsLink();
@@ -201,48 +202,48 @@
                         ]);
                     },
             
-                    _buildSettingsLink: function(){
+                    _buildSettingsLink:function () {
                         return Ext.widget('component', {
-                            cls: 'appSettingsLink',
-                            renderTpl: '<a href="#">Settings</a>',
-                            renderSelectors: {
-                                link: 'a'
+                            cls:'appSettingsLink',
+                            renderTpl:'<a href="#">Settings</a>',
+                            renderSelectors:{
+                                link:'a'
                             },
-                            listeners: {
-                                click: {
-                                    element: 'link',
-                                    fn: function(){
+                            listeners:{
+                                click:{
+                                    element:'link',
+                                    fn:function () {
                                         Ext.widget('rallyappsettingsdialog', {
-                                            context: this.getContext(),
-                                            fields: [
+                                            context:this.getContext(),
+                                            fields:[
                                                 {
-                                                    type: 'type'
+                                                    type:'type'
                                                 }
                                             ],
-                                            settings: this.getSettings(),
-                                            listeners: {
-                                                save: function(settings){
+                                            settings:this.getSettings(),
+                                            listeners:{
+                                                save:function (settings) {
                                                     this.setSettings(settings);
                                                     this._reloadApp();
                                                 },
-                                                scope: this
+                                                scope:this
                                             }
                                         }).show();
                                     },
-                                    stopEvent: true
+                                    stopEvent:true
                                 },
-                                scope: this
+                                scope:this
                             }
                         })
                     },
             
-                    _reloadApp: function(){
+                    _reloadApp:function () {
                         this.down('#bodyContainer').removeAll();
                         this.down('#header').removeAll();
                         this.launch();
                     },
             
-                    _queryForType: function(typeRef) {
+                    _queryForType:function (typeRef) {
                         var filters = [];
                         if (typeRef) {
                             filters.push({
@@ -257,12 +258,12 @@
                         }
             
                         this.typeStore = Ext.create('Rally.data.WsapiDataStore', {
-                            model: 'TypeDefinition',
-                            autoLoad: true,
-                            context: this.getContext().getDataContext(),
-                            filters: filters,
+                            model:'TypeDefinition',
+                            autoLoad:true,
+                            context:this.getContext().getDataContext(),
+                            filters:filters,
                             listeners:{
-                                load: function(data) {
+                                load:function (data) {
                                     var type = data.getAt(0);
                                     this.setType(type);
                                 },
@@ -290,6 +291,24 @@
                      * @param options.scope the scope to call success with
                      */
                     _loadStates:function (options) {
+                        var filter;
+                        Ext.each(columnsToShow, function (columnName) {
+                            var current = Ext.create('Rally.data.QueryFilter', {
+                                property:'Name',
+                                operator:'=',
+                                value:columnName
+                            });
+            
+            
+                            if (!filter) {
+                                filter = current;
+                            }
+                            else {
+                                filter = filter.or(current);
+                            }
+                            console.log(filter.toString());
+                            //columnsToShow
+                        });
                         Ext.create('Rally.data.WsapiDataStore', {
                             model:'State',
                             context:this.getContext().getDataContext(),
@@ -297,13 +316,14 @@
                             fetch:['Name', 'WIPLimit', 'Description'],
                             filters:[
                                 {
-                                    property: 'TypeDef',
+                                    property:'TypeDef',
                                     value:this.currentType.get('_ref')
                                 },
                                 {
                                     property:'Enabled',
                                     value:true
-                                }
+                                },
+                                filter
                             ],
                             sorters:[
                                 {
@@ -327,7 +347,7 @@
                      * @param columns
                      */
                     _drawCardboard:function (columns) {
-                        if(columns) {
+                        if (columns) {
                             this._showColumns(columns);
                         }
                         else {
@@ -335,7 +355,7 @@
                         }
                     },
             
-                    _showColumns: function(columns) {
+                    _showColumns:function (columns) {
                         var cardboard = this.down('#cardboard');
                         if (cardboard) {
                             cardboard.destroy();
@@ -351,21 +371,21 @@
             
                         var fields = this.getSetting('fields');
             
-                        if(fields) {
+                        if (fields) {
                             columnConfig.additionalFetchFields = fields.split(',');
                             cardConfig.fields = fields.split(',').sort();
                         }
             
                         cardboard = this.cardboard = Ext.widget('rallycardboard', {
-                            types: [this.currentType.get('TypePath')],
-                            itemId: 'cardboard',
-                            attribute: 'State',
-                            columns: columns,
-                            maxColumnsPerBoard: columns.length,
-                            ddGroup: this.currentType.get('TypePath'),
-                            enableRanking: this.getContext().get('workspace').WorkspaceConfiguration.DragDropRankingEnabled,
-                            columnConfig: columnConfig,
-                            cardConfig: cardConfig,
+                            types:[this.currentType.get('TypePath')],
+                            itemId:'cardboard',
+                            attribute:'State',
+                            columns:columns,
+                            maxColumnsPerBoard:columns.length,
+                            ddGroup:this.currentType.get('TypePath'),
+                            enableRanking:this.getContext().get('workspace').WorkspaceConfiguration.DragDropRankingEnabled,
+                            columnConfig:columnConfig,
+                            cardConfig:cardConfig,
                             storeConfig:{
                                 filters:[
                                     {
@@ -373,7 +393,7 @@
                                         value:this.currentType.get('_ref')
                                     }
                                 ],
-                                context: this.context.getDataContext()
+                                context:this.context.getDataContext()
                             },
                             listeners:{
                                 aftercarddroppedsave:function () {
@@ -409,19 +429,19 @@
                      * @return columns for the cardboard, as a map with keys being the column name.
                      */
                     _createColumns:function (states) {
-                        if(!states.length) {
+                        if (!states.length) {
                             return undefined;
                         }
             
                         var columns = [
-                                {
-                                    displayValue:'No Entry',
-                                    value:null,
-                                    cardLimit:50,
-                                    showPolicies:false,
-                                    enablePolicies:true
-                                }
-                            ];
+                            {
+                                displayValue:'No Entry',
+                                value:null,
+                                cardLimit:50,
+                                showPolicies:false,
+                                enablePolicies:true
+                            }
+                        ];
             
                         Ext.Array.each(states, function (state) {
                             columns.push({
@@ -441,7 +461,7 @@
                         Ext.create('Rally.ui.tooltip.PercentDoneToolTip', {
                             target:cardboard.getEl(),
                             delegate:'.percentDoneContainer',
-                            percentDoneName: 'PercentDoneByStoryCount',
+                            percentDoneName:'PercentDoneByStoryCount',
                             listeners:{
                                 beforeshow:function (tip) {
             
@@ -488,7 +508,7 @@
                             listeners:{
                                 click:{
                                     element:'el',
-                                    fn: function(){
+                                    fn:function () {
                                         Rally.alm.util.Help.launchHelp({
                                             id:265
                                         });
@@ -500,80 +520,80 @@
                         }, config));
                     },
             
-                    _buildFilterInfo: function(){
+                    _buildFilterInfo:function () {
                         var filterInfo = Ext.widget('component', {
-                            itemId: 'filterInfo',
-                            cls: 'filterInfo',
-                            renderTpl: '<a></a>',
-                            renderSelectors: {
-                                link: 'a'
+                            itemId:'filterInfo',
+                            cls:'filterInfo',
+                            renderTpl:'<a></a>',
+                            renderSelectors:{
+                                link:'a'
                             }
                         });
             
-                        filterInfo.on('afterrender', function(){
+                        filterInfo.on('afterrender', function () {
                             this._initFilterInfoTooltip();
                         }, this);
             
                         return filterInfo;
                     },
             
-                    _initFilterInfoTooltip: function(){
+                    _initFilterInfoTooltip:function () {
                         var me = this;
                         this.filterInfoTooltip = Ext.create('Rally.ui.tooltip.ToolTip', {
-                            cls: 'filterInfoTooltip',
-                            width: 200,
-                            target: this.down('#filterInfo').getEl().down('a'),
-                            anchor: 'top',
-                            anchorOffset: 150,
-                            getTargetXY: function(){
+                            cls:'filterInfoTooltip',
+                            width:200,
+                            target:this.down('#filterInfo').getEl().down('a'),
+                            anchor:'top',
+                            anchorOffset:150,
+                            getTargetXY:function () {
                                 var filterPosition = me.down('#filterInfo').getEl().getXY();
-                                return [filterPosition[0]-160, filterPosition[1]+26];
+                                return [filterPosition[0] - 160, filterPosition[1] + 26];
                             },
-                            listeners: {
-                                beforeShow: function(tip){
+                            listeners:{
+                                beforeShow:function (tip) {
                                     tip.update(me._getFilterTooltipContent());
                                 }
                             }
                         });
                     },
             
-                    _getFilterTooltipContent: function(){
+                    _getFilterTooltipContent:function () {
                         var tplData = {};
             
-                        if(this.getSetting('project')){
+                        if (this.getSetting('project')) {
                             tplData.project = this.getContext().get('project').Name;
                         }
-                        if(this.currentType){
+                        if (this.currentType) {
                             tplData.type = this.currentType.get('Name');
                         }
             
                         var scopeUp = this.getSetting('projectScopeUp') == 'true';
                         var scopeDown = this.getSetting('projectScopeDown') == 'true';
             
-                        if(scopeUp && scopeDown){
+                        if (scopeUp && scopeDown) {
                             tplData.scopingCls = 'scopeUpAndDown';
-                        } else if(scopeUp){
+                        } else if (scopeUp) {
                             tplData.scopingCls = 'scopeUp';
-                        } else if(scopeDown){
+                        } else if (scopeDown) {
                             tplData.scopingCls = 'scopeDown';
                         } else {
                             tplData.scopingCls = 'noScope';
                         }
             
                         return Ext.create('Ext.XTemplate',
-                                '<tpl if="project">',
-                                    '<div class="filterInfoTooltipLineItem">',
-                                        '<label>Project:</label>',
-                                        '<span>{project}</span>',
-                                        '<span class="{scopingCls}"></span>',
-                                    '</div>',
-                                '</tpl>',
-                                '<tpl if="type">',
-                                    '<div class="filterInfoTooltipLineItem">',
-                                        '<label>Type:</label> ',
-                                        '<span>{type}</span>',
-                                    '</div>',
-                                '</tpl>'
+                            '<tpl if="project">',
+                            '<div class="filterInfoTooltipLineItem">',
+                            '<label>Project:</label>',
+                            '<span>{project}</span>',
+                            '<span class="{scopingCls}"></span>',
+                            '</div>',
+                            '</tpl>',
+                            '<tpl if="type">',
+                            '<div class="filterInfoTooltipLineItem">',
+                            '<label>Type:</label> ',
+                            '<span>{type}</span>',
+                            '</div>',
+                            '</tpl>'
                         ).apply(tplData);
                     }
                 });
