@@ -1,5 +1,7 @@
-PortfolioKanban
+PortfolioKanban (Deprecated)
 ===============
+
+To keep up with the latest changes to Portfolio Kanban, check out our app-catalog version [here](https://github.com/RallyApps/app-catalog/tree/master/src/apps/portfoliokanban). This repository will be kept for archive purposes.
 
 ##Overview
 
